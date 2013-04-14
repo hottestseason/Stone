@@ -12,9 +12,15 @@ module Stone
   end
 
   class NumberLiteral < ASTLeaf
+    def eval(env)
+      token.value
+    end
   end
 
   class Name < ASTLeaf
+    def eval(env)
+      env[token.value]
+    end
   end
 
   class StringLiteral < ASTLeaf
@@ -38,8 +44,17 @@ module Stone
     end
 
     def left; children.first end
-    def operator; children.second end
+    def operator; children.second.token end
     def right; children.third end
+
+    def eval(env)
+      if operator.is_identifier?("=")
+        name = left.token.value
+        env[name] = right.eval(env)
+      else
+        Kernel.eval "#{left.eval(env)} #{operator.value} #{right.eval(env)}"
+      end
+    end
   end
 
   class IfStmnt < ASTList
@@ -50,6 +65,14 @@ module Stone
     def condition; children.first end
     def then_block; children.second end
     def else_block; children.third end
+
+    def eval(env)
+      if condition.eval(env)
+        then_block.eval(env)
+      else
+        else_block.eval(env) if else_block
+      end
+    end
   end
 
   class WhileStmnt < ASTList
@@ -59,20 +82,46 @@ module Stone
 
     def condition; children.first end
     def body; children.second end
+
+    def eval(env)
+      while condition.eval(env)
+        body.eval(env)
+      end
+    end
   end
 
   class BlockStmnt < ASTList
     def to_s
       children.map { |child| "(#{child})" }.join(" ")
     end
+
+    def eval(env)
+      result = nil
+      children.each do |child|
+        result = child.eval(env)
+      end
+      result
+    end
   end
 
   class NegativeExpr < ASTList
+    def to_s
+      "- #{operand}"
+    end
+
+    def operand; children.first end
+
+    def eval(env)
+      - operand.eval(env)
+    end
   end
 
   class NullStmnt < ASTList
     def to_s
       ""
+    end
+
+    def eval(env)
     end
   end
 end

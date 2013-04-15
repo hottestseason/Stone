@@ -1,5 +1,11 @@
 module Stone
-  class ASTLeaf
+  class ASTree
+    def self.create(*args)
+      self.new(*args)
+    end
+  end
+
+  class ASTLeaf < ASTree
     attr_reader :token
 
     def initialize(token)
@@ -26,7 +32,7 @@ module Stone
   class StringLiteral < ASTLeaf
   end
 
-  class ASTList
+  class ASTList < ASTree
     attr_reader :children
 
     def initialize(*args)

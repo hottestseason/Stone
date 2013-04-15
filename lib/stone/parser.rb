@@ -36,7 +36,7 @@ module Stone
       if next_token
         if next_token.is_identifier?(";", "\n")
           read_next
-          NullStmnt.new
+          NullStmnt.create
         else
           if next_token.is_identifier?("def")
             define
@@ -56,14 +56,14 @@ module Stone
     # "def" IDENTIFIER param_list block
     def define
       read_next.must_be_identifier!("def")
-      DefStmnt.new(ASTLeaf.new(read_next), param_list, block)
+      DefStmnt.create(ASTLeaf.new(read_next), param_list, block)
     end
 
     # "(" [ params ] ")"
     def param_list
       read_next.must_be_identifier!("(")
       if next_token.is_identifier?(")")
-        ASTList.new
+        ASTList.create
       else
         params
       end.tap do
@@ -77,7 +77,7 @@ module Stone
       while next_token.is_identifier?(",")
         params << param
       end
-      ParameterList.new(*params)
+      ParameterList.create(*params)
     end
 
     # IDENTIFIER
@@ -96,13 +96,13 @@ module Stone
         if next_token.is_identifier?("else")
           read_next
           else_block = block
-          IfStmnt.new(condition, then_block, else_block)
+          IfStmnt.create(condition, then_block, else_block)
         else
-          IfStmnt.new(condition, then_block)
+          IfStmnt.create(condition, then_block)
         end
       elsif next_token.is_identifier?("while")
         read_next
-        WhileStmnt.new(expression, block)
+        WhileStmnt.create(expression, block)
       else
         simple
       end
@@ -114,7 +114,7 @@ module Stone
       while next_token && !next_token.is_identifier?(",", "\n")
         children << args
       end
-      PrimaryStmnt.new(*children)
+      PrimaryStmnt.create(*children)
     end
 
     # "{" [ statement ] { (";" | "\n") [ statement ] } "}"
@@ -129,19 +129,19 @@ module Stone
         end
       end
       read_next.must_be_identifier!("}")
-      BlockStmnt.new(*statements)
+      BlockStmnt.create(*statements)
     end
 
     # factor { OP factor }
     def expression
       right = factor
       do_shift = -> (left, priority) {
-        op = ASTLeaf.new(read_next)
+        op = ASTLeaf.create(read_next)
         right = factor
         while (next_priority = OPERATORS[next_token.value]) && next_priority.prior_to?(priority)
           right = do_shift[right, next_priority]
         end
-        BinaryExpr.new(left, op, right)
+        BinaryExpr.create(left, op, right)
       }
       while next_token && priority = OPERATORS[next_token.value]
         right = do_shift[right, priority]
@@ -152,7 +152,7 @@ module Stone
     # "-" primary | primary
     def factor
       if next_token.is_identifier?("-")
-        NegativeExpr.new(primary)
+        NegativeExpr.create(primary)
       else
         primary
       end
@@ -167,25 +167,25 @@ module Stone
                       next_token.must_be_identifier!(")")
                     end
                   elsif next_token.is_number?
-                    NumberLiteral.new(read_next)
+                    NumberLiteral.create(read_next)
                   elsif next_token.is_identifier?
-                    Name.new(read_next)
+                    Name.create(read_next)
                   else
-                    StringLiteral.new(read_next.must_be_string!)
+                    StringLiteral.create(read_next.must_be_string!)
                   end
       while next_token && next_token.is_identifier?("(")
         children << postfix
       end
-      PrimaryStmnt.new(*children)
+      PrimaryStmnt.create(*children)
     end
 
     # "(" [ args ] ")"
     def postfix
       read_next.must_be_identifier!("(")
       if next_token && next_token.is_identifier?(")")
-        Postfix.new
+        Postfix.create
       else
-        Postfix.new(args)
+        Postfix.create(args)
       end.tap do
         read_next.must_be_identifier!(")")
       end
@@ -198,7 +198,7 @@ module Stone
         read_next
         children << [expression]
       end
-      Arguments.new(*children)
+      Arguments.create(*children)
     end
 
     private

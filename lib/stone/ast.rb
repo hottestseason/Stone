@@ -34,7 +34,7 @@ module Stone
     end
 
     def to_s
-      children.to_s
+      children.map { |child| "(#{child})" }.join(" ")
     end
   end
 
@@ -91,10 +91,6 @@ module Stone
   end
 
   class BlockStmnt < ASTList
-    def to_s
-      children.map { |child| "(#{child})" }.join(" ")
-    end
-
     def eval(env)
       result = nil
       children.each do |child|
@@ -123,5 +119,35 @@ module Stone
 
     def eval(env)
     end
+  end
+
+  class DefStmnt < ASTList
+    def to_s
+      "(def #{name} #{parameters} #{body})"
+    end
+
+    def name
+      children.first.token
+    end
+
+    def parameters
+      children.second
+    end
+
+    def body
+      children.third
+    end
+  end
+
+  class ParameterList < ASTList
+  end
+
+  class PrimaryStmnt < ASTList
+  end
+
+  class Postfix < ASTList
+  end
+
+  class Arguments < Postfix
   end
 end

@@ -31,15 +31,19 @@ module Stone
       @tokens = tokens
     end
 
-    # [ statement ] (";" | "\n")
+    # [ def | statement ] (";" | "\n")
     def program
       if next_token
         if next_token.is_identifier?(";", "\n")
           read_next
           NullStmnt.new
         else
-          statement.tap do
-            if next_token.is_identifier?(";", "\n")
+          if next_token.is_identifier?("def")
+            define
+          else
+            statement
+          end.tap do
+            if next_token && next_token.is_identifier?(";", "\n")
               read_next
             end
           end
@@ -47,6 +51,38 @@ module Stone
       else
         nil
       end
+    end
+
+    # "def" IDENTIFIER param_list block
+    def define
+      read_next.must_be_identifier!("def")
+      DefStmnt.new(ASTLeaf.new(read_next), param_list, block)
+    end
+
+    # "(" [ params ] ")"
+    def param_list
+      read_next.must_be_identifier!("(")
+      param_list = if next_token.is_identifier?(")")
+                     ASTList.new
+                   else
+                     params
+                   end
+      read_next
+      param_list
+    end
+
+    # param { "," param }
+    def params
+      params = [param]
+      while next_token.is_identifier?(",")
+        params << param
+      end
+      ParameterList.new(*params)
+    end
+
+    # IDENTIFIER
+    def param
+      read_next
     end
 
     # "if" expression block [ "else" block ]
@@ -72,9 +108,13 @@ module Stone
       end
     end
 
-    # expression
+    # expression [ args ]
     def simple
-      expression
+      children = [expression]
+      while next_token && !next_token.is_identifier?(",", "\n")
+        children << args
+      end
+      PrimaryStmnt.new(*children)
     end
 
     # "{" [ statement ] { (";" | "\n") [ statement ] } "}"
@@ -113,26 +153,53 @@ module Stone
     # "-" primary | primary
     def factor
       if next_token.is_identifier?("-")
-        NegativeExpr.new([primary])
+        NegativeExpr.new(primary)
       else
         primary
       end
     end
 
-    # "(" expr ")" | NUMBER | IDENTIFIER | STRING
+    # ( "(" expr ")" | NUMBER | IDENTIFIER | STRING ) { postfix }
     def primary
-      if next_token.is_identifier?("(")
-        read_next
-        expression.tap do
-          next_token.must_be_identifier!(")")
-        end
-      elsif next_token.is_number?
-        NumberLiteral.new(read_next)
-      elsif next_token.is_identifier?
-        Name.new(read_next)
-      else
-        StringLiteral.new(read_next.must_be_string!)
+      children = []
+      children << if next_token && next_token.is_identifier?("(")
+                    read_next
+                    expression.tap do
+                      next_token.must_be_identifier!(")")
+                    end
+                  elsif next_token.is_number?
+                    NumberLiteral.new(read_next)
+                  elsif next_token.is_identifier?
+                    Name.new(read_next)
+                  else
+                    StringLiteral.new(read_next.must_be_string!)
+                  end
+      while next_token && next_token.is_identifier?("(")
+        children << postfix
       end
+      PrimaryStmnt.new(*children)
+    end
+
+    # "(" [ args ] ")"
+    def postfix
+      read_next.must_be_identifier!("(")
+      postfix = if next_token && next_token.is_identifier?(")")
+                  Postfix.new
+                else
+                  Postfix.new(args)
+                end
+      read_next.must_be_identifier!(")")
+      postfix
+    end
+
+    # expr { "," expr }
+    def args
+      children = [expression]
+      while next_token && next_token.is_identifier?(",")
+        read_next
+        children << [expression]
+      end
+      Arguments.new(*children)
     end
 
     private

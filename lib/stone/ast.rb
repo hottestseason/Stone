@@ -40,7 +40,7 @@ module Stone
 
   class BinaryExpr < ASTList
     def to_s
-      "(#{left} #{operator} #{right})"
+      "(#{left} #{operator.value} #{right})"
     end
 
     def left; children.first end

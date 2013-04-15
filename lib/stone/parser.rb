@@ -62,13 +62,13 @@ module Stone
     # "(" [ params ] ")"
     def param_list
       read_next.must_be_identifier!("(")
-      param_list = if next_token.is_identifier?(")")
-                     ASTList.new
-                   else
-                     params
-                   end
-      read_next
-      param_list
+      if next_token.is_identifier?(")")
+        ASTList.new
+      else
+        params
+      end.tap do
+        read_next.must_be_identifier!(")")
+      end
     end
 
     # param { "," param }
@@ -135,19 +135,18 @@ module Stone
     # factor { OP factor }
     def expression
       right = factor
+      do_shift = -> (left, priority) {
+        op = ASTLeaf.new(read_next)
+        right = factor
+        while (next_priority = OPERATORS[next_token.value]) && next_priority.prior_to?(priority)
+          right = do_shift[right, next_priority]
+        end
+        BinaryExpr.new(left, op, right)
+      }
       while next_token && priority = OPERATORS[next_token.value]
-        right = do_shift(right, priority)
+        right = do_shift[right, priority]
       end
       right
-    end
-
-    def do_shift(left, priority)
-      op = ASTLeaf.new(read_next)
-      right = factor
-      while (next_priority = OPERATORS[next_token.value]) && next_priority.prior_to?(priority)
-        right = do_shift(right, next_priority)
-      end
-      BinaryExpr.new(left, op, right)
     end
 
     # "-" primary | primary
@@ -183,13 +182,13 @@ module Stone
     # "(" [ args ] ")"
     def postfix
       read_next.must_be_identifier!("(")
-      postfix = if next_token && next_token.is_identifier?(")")
-                  Postfix.new
-                else
-                  Postfix.new(args)
-                end
-      read_next.must_be_identifier!(")")
-      postfix
+      if next_token && next_token.is_identifier?(")")
+        Postfix.new
+      else
+        Postfix.new(args)
+      end.tap do
+        read_next.must_be_identifier!(")")
+      end
     end
 
     # expr { "," expr }

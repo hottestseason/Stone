@@ -27,7 +27,7 @@ module Stone
 
   class Name < ASTLeaf
     def eval(env)
-      env[token.value]
+      env.get(token.value)
     end
   end
 
@@ -66,7 +66,7 @@ module Stone
     def eval(env)
       if operator.is_identifier?("=")
         name = left.token.value
-        env[name] = right.eval(env)
+        env.create(name, right.eval(env))
       else
         Kernel.eval "#{left.eval(env)} #{operator.value} #{right.eval(env)}"
       end

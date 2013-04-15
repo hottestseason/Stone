@@ -43,9 +43,7 @@ module Stone
           else
             statement
           end.tap do
-            if next_token && next_token.is_identifier?(";", "\n")
-              read_next
-            end
+            read_next if next_token && next_token.is_identifier?(";", "\n")
           end
         end
       else
@@ -82,7 +80,7 @@ module Stone
 
     # IDENTIFIER
     def param
-      read_next
+      ASTLeaf.create(read_next)
     end
 
     # "if" expression block [ "else" block ]
@@ -182,10 +180,10 @@ module Stone
     # "(" [ args ] ")"
     def postfix
       read_next.must_be_identifier!("(")
-      if next_token && next_token.is_identifier?(")")
-        Postfix.create
+      if next_token.is_identifier?(")")
+        ASTList.create
       else
-        Postfix.create(args)
+        args
       end.tap do
         read_next.must_be_identifier!(")")
       end
@@ -196,7 +194,7 @@ module Stone
       children = [expression]
       while next_token && next_token.is_identifier?(",")
         read_next
-        children << [expression]
+        children << expression
       end
       Arguments.create(*children)
     end

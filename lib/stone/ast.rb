@@ -39,7 +39,7 @@ module Stone
 
     attr_reader :children
 
-    def_delegators :children, :each, :second, :third
+    def_delegators :children, :each, :[], :size, :second, :third
 
     def self.create(*args)
       self.new(args.flatten)
@@ -140,25 +140,69 @@ module Stone
   class DefStmnt < ASTList
     alias :parameters :second
     alias :body :third
-    def_delegator :first, :token, :name
+
+    def name
+      first.token.value
+    end
 
     def to_s
       "(def #{name} #{parameters} #{body})"
     end
-  end
 
-  class ParameterList < ASTList
-  end
-
-  class PrimaryStmnt < ASTList
-    def self.create(*args)
-      args.first if args.size == 1
+    def eval(env)
+      env.create(name, Function.new(parameters, body, env))
     end
   end
 
-  class Postfix < ASTList
+  class ParameterList < ASTList
+    def to_s
+      children.map { |child| "(#{child.token.value})" }.join(" ")
+    end
+
+    def name(i)
+      children[i].token.value
+    end
+
+    def eval(env, i, value)
+      env.create(name(i), value)
+    end
   end
 
-  class Arguments < Postfix
+  class PrimaryStmnt < ASTList
+    alias :operand :first
+
+    def self.create(*args)
+      if args.size == 1
+        args.first
+      else
+        super
+      end
+    end
+
+    def eval(env)
+      eval_sub_expr(env, 0)
+    end
+
+    def postfix(nest)
+      self[size - nest - 1]
+    end
+
+    def eval_sub_expr(env, nest)
+      if size - nest - 1 > 0
+        postfix(nest).eval(env, eval_sub_expr(env, nest + 1))
+      else
+        operand.eval(env)
+      end
+    end
+  end
+
+  class Arguments < ASTList
+    def eval(env, function)
+      local_env = function.create_local_env
+      each.with_index do |arg, i|
+        function.parameters.eval(local_env, i, arg.eval(env))
+      end
+      function.body.eval(local_env)
+    end
   end
 end

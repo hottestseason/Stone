@@ -149,6 +149,9 @@ module Stone
   end
 
   class PrimaryStmnt < ASTList
+    def self.create(*args)
+      args.first if args.size == 1
+    end
   end
 
   class Postfix < ASTList

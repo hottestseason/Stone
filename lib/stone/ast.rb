@@ -1,5 +1,7 @@
 module Stone
   class ASTree
+    extend Forwardable
+
     def self.create(*args)
       self.new(*args)
     end
@@ -33,10 +35,18 @@ module Stone
   end
 
   class ASTList < ASTree
+    include Enumerable
+
     attr_reader :children
 
-    def initialize(*args)
-      @children = args
+    def_delegators :children, :each, :second, :third
+
+    def self.create(*args)
+      self.new(args.flatten)
+    end
+
+    def initialize(children)
+      @children = children
     end
 
     def to_s
@@ -45,13 +55,13 @@ module Stone
   end
 
   class BinaryExpr < ASTList
+    alias :left :first
+    alias :right :third
+    def_delegator :second, :token, :operator
+
     def to_s
       "(#{left} #{operator.value} #{right})"
     end
-
-    def left; children.first end
-    def operator; children.second.token end
-    def right; children.third end
 
     def eval(env)
       if operator.is_identifier?("=")
@@ -64,13 +74,13 @@ module Stone
   end
 
   class IfStmnt < ASTList
+    alias :condition :first
+    alias :then_block :second
+    alias :else_block :third
+
     def to_s
       "(if #{condition} #{then_block} else #{else_block})"
     end
-
-    def condition; children.first end
-    def then_block; children.second end
-    def else_block; children.third end
 
     def eval(env)
       if condition.eval(env)
@@ -82,12 +92,12 @@ module Stone
   end
 
   class WhileStmnt < ASTList
+    alias :condition :first
+    alias :body :second
+
     def to_s
       "(while #{condition} #{body})"
     end
-
-    def condition; children.first end
-    def body; children.second end
 
     def eval(env)
       while condition.eval(env)
@@ -107,11 +117,11 @@ module Stone
   end
 
   class NegativeExpr < ASTList
+    alias :operand :first
+
     def to_s
       "- #{operand}"
     end
-
-    def operand; children.first end
 
     def eval(env)
       - operand.eval(env)
@@ -128,20 +138,12 @@ module Stone
   end
 
   class DefStmnt < ASTList
+    alias :parameters :second
+    alias :body :third
+    def_delegator :first, :token, :name
+
     def to_s
       "(def #{name} #{parameters} #{body})"
-    end
-
-    def name
-      children.first.token
-    end
-
-    def parameters
-      children.second
-    end
-
-    def body
-      children.third
     end
   end
 

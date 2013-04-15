@@ -1,7 +1,5 @@
 module Stone
   class ASTree
-    extend Forwardable
-
     def self.create(*args)
       self.new(*args)
     end
@@ -39,7 +37,7 @@ module Stone
 
     attr_reader :children
 
-    def_delegators :children, :each, :[], :size, :second, :third
+    delegate :each, :[], :size, :second, :third, to: :children
 
     def self.create(*args)
       self.new(args.flatten)
@@ -57,18 +55,21 @@ module Stone
   class BinaryExpr < ASTList
     alias :left :first
     alias :right :third
-    def_delegator :second, :token, :operator
+
+    def operator
+      second.token.value
+    end
 
     def to_s
-      "(#{left} #{operator.value} #{right})"
+      "(#{left} #{operator} #{right})"
     end
 
     def eval(env)
-      if operator.is_identifier?("=")
+      if operator == "="
         name = left.token.value
         env.create(name, right.eval(env))
       else
-        Kernel.eval "#{left.eval(env)} #{operator.value} #{right.eval(env)}"
+        Kernel.eval "#{left.eval(env)} #{operator} #{right.eval(env)}"
       end
     end
   end

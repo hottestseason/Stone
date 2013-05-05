@@ -38,7 +38,6 @@ private:
     llvm::Module *module;
     llvm::IRBuilder<> *builder;
     llvm::Value *lastValue;
-    llvm::Function *lastFunction;
     std::map<std::string, llvm::AllocaInst*> *namedValues;
     llvm::ExecutionEngine *executionEngine;
 

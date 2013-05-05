@@ -97,31 +97,33 @@ void CodeGenerator::visit(DefAST *ast) {
     namedValues->clear();
     std::vector<llvm::Type*> argTypes(ast->arguments()->size(), llvm::Type::getDoubleTy(llvm::getGlobalContext()));
     auto *functionType = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()), argTypes, false);
-    lastFunction = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, ast->name(), module);
+    auto function = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, ast->name(), module);
 
     int i = 0;
-    for (auto argIterator = lastFunction->arg_begin(); i != lastFunction->arg_size(); ++argIterator, ++i) {
+    for (auto argIterator = function->arg_begin(); i != function->arg_size(); ++argIterator, ++i) {
         argIterator->setName(ast->arguments()->name(i));
     }
 
-    auto *block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", lastFunction);
+    auto *block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", function);
     builder->SetInsertPoint(block);
 
-    createArgumentAllocas(lastFunction, ast->arguments());
+    createArgumentAllocas(function, ast->arguments());
 
     ast->body()->accept(this);
     builder->CreateRet(lastValue);
+
+    lastValue = function;
 }
 
 void CodeGenerator::visit(TopAST *ast) {
     for (AST* child : *ast->children()) {
         if (typeid(*child) == typeid(DefAST)) {
             child->accept(this);
-            lastFunction->dump();
+            lastValue->dump();
         } else {
             (new DefAST("", child))->accept(this);
-            lastFunction->dump();
-            double (*fp)() = (double (*)())(intptr_t)executionEngine->getPointerToFunction(lastFunction);
+            lastValue->dump();
+            double (*fp)() = (double (*)())(intptr_t)executionEngine->getPointerToFunction(dynamic_cast<llvm::Function*>(lastValue));
             std::cout << "Evaluated to " << fp() << std::endl;
         }
     }
@@ -152,8 +154,8 @@ llvm::AllocaInst *CodeGenerator::createEntryBlockAlloca(llvm::Function *function
 
 void CodeGenerator::createArgumentAllocas(llvm::Function *function, ArgumentsAST *arguments) {
     int i = 0;
-    for (auto argIterator = lastFunction->arg_begin(); i != lastFunction->arg_size(); ++argIterator, ++i) {
-        auto alloca = createEntryBlockAlloca(lastFunction, arguments->name(i));
+    for (auto argIterator = function->arg_begin(); i != function->arg_size(); ++argIterator, ++i) {
+        auto alloca = createEntryBlockAlloca(function, arguments->name(i));
         builder->CreateStore(argIterator, alloca);
         (*namedValues)[arguments->name(i)] = alloca;
     }

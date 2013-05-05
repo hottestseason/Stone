@@ -31,17 +31,28 @@ void CodeGenerator::visit(ASTLeaf *ast) {
 }
 
 void CodeGenerator::visit(BinaryExprAST *ast) {
-    ast->left()->accept(this);
-    auto lValue = lastValue;
-    ast->right()->accept(this);
-    auto rValue = lastValue;
+    if (ast->op() == "=") {
+        auto varName = dynamic_cast<ASTLeaf*>(ast->left())->token()->text();
+        ast->right()->accept(this);
+        auto rValue = lastValue;
+        if (!(*namedValues)[varName]) {
+            auto alloca = createEntryBlockAlloca(builder->GetInsertBlock()->getParent(), varName);
+            (*namedValues)[varName] = alloca;
+        }
+        builder->CreateStore(rValue, (*namedValues)[varName]);
+    } else {
+        ast->left()->accept(this);
+        auto lValue = lastValue;
+        ast->right()->accept(this);
+        auto rValue = lastValue;
 
-    if (ast->op() == "+") {
-        lastValue = builder->CreateFAdd(lValue, rValue);
-    } else if (ast->op() == "-") {
-        lastValue = builder->CreateFSub(lValue, rValue);
-    } else if(ast->op() == ">") {
-        lastValue = builder->CreateUIToFP(builder->CreateFCmpUGT(lValue, rValue), llvm::Type::getDoubleTy(llvm::getGlobalContext()));
+        if (ast->op() == "+") {
+            lastValue = builder->CreateFAdd(lValue, rValue);
+        } else if (ast->op() == "-") {
+            lastValue = builder->CreateFSub(lValue, rValue);
+        } else if(ast->op() == ">") {
+            lastValue = builder->CreateUIToFP(builder->CreateFCmpUGT(lValue, rValue), llvm::Type::getDoubleTy(llvm::getGlobalContext()));
+        }
     }
 }
 

@@ -30,6 +30,7 @@ public:
     void visit(DefAST*);
     void visit(TopAST*);
     void visit(BlockAST*);
+    void visit(ValuableAST*);
     void dump();
     void error(const char *);
 

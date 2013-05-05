@@ -24,15 +24,12 @@ void CodeGenerator::generate() {
 void CodeGenerator::visit(ASTLeaf *ast) {
     if (ast->token()->isNumber()) {
         lastValue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(ast->token()->number()));
-    } else {
-        auto varName = ast->token()->text();
-        lastValue = builder->CreateLoad((*namedValues)[varName], varName);
     }
 }
 
 void CodeGenerator::visit(BinaryExprAST *ast) {
     if (ast->op() == "=") {
-        auto varName = dynamic_cast<ASTLeaf*>(ast->left())->token()->text();
+        auto varName = dynamic_cast<ValuableAST*>(ast->left())->getName();
         ast->right()->accept(this);
         auto rValue = lastValue;
         if (!(*namedValues)[varName]) {
@@ -112,7 +109,7 @@ void CodeGenerator::visit(DefAST *ast) {
 
     int i = 0;
     for (auto argIterator = function->arg_begin(); i != function->arg_size(); ++argIterator, ++i) {
-        argIterator->setName(ast->arguments()->name(i));
+        argIterator->setName(ast->arguments()->get(i)->getName());
     }
 
     auto *block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", function);
@@ -144,6 +141,11 @@ void CodeGenerator::visit(BlockAST *ast) {
     visitChildren(ast);
 }
 
+void CodeGenerator::visit(ValuableAST *ast) {
+    auto varName = ast->getName();
+    lastValue = builder->CreateLoad((*namedValues)[varName], varName);
+}
+
 void CodeGenerator::dump() {
     module->dump();
 }
@@ -166,8 +168,9 @@ llvm::AllocaInst *CodeGenerator::createEntryBlockAlloca(llvm::Function *function
 void CodeGenerator::createArgumentAllocas(llvm::Function *function, ArgumentsAST *arguments) {
     int i = 0;
     for (auto argIterator = function->arg_begin(); i != function->arg_size(); ++argIterator, ++i) {
-        auto alloca = createEntryBlockAlloca(function, arguments->name(i));
+        auto arg = arguments->get(i);
+        auto alloca = createEntryBlockAlloca(function, arg->getName());
         builder->CreateStore(argIterator, alloca);
-        (*namedValues)[arguments->name(i)] = alloca;
+        (*namedValues)[arg->getName()] = alloca;
     }
 }

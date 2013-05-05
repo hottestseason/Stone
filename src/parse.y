@@ -71,7 +71,7 @@ expression:
 
 primary:
       tNUMBER { $$ = new ASTLeaf(new NumberToken($1)); }
-    | tIDENTIFIER { $$ = new ASTLeaf(new IdentifierToken(*$1)); }
+    | tIDENTIFIER { $$ = new ValuableAST(*$1); }
     | tIDENTIFIER tLPAREN arguments tRPAREN { $$ = new CallFunctionAST(*$1, $3); }
 
 arguments:

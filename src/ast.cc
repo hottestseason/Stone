@@ -70,6 +70,18 @@ void ASTLeaf::accept(ASTVisitor *visitor) {
     visitor->visit(this);
 }
 
+ValuableAST::ValuableAST(std::string name) : AST() {
+    addChild(new ASTLeaf(new IdentifierToken(name)));
+}
+
+void ValuableAST::accept(ASTVisitor *visitor) {
+    visitor->visit(this);
+}
+
+std::string ValuableAST::getName() {
+    return dynamic_cast<ASTLeaf*>(child(0))->token()->text();
+}
+
 BinaryExprAST::BinaryExprAST(std::string tokenName, AST *ast) : AST() {
     Token* token = new IdentifierToken(tokenName);
     ASTLeaf* op = new ASTLeaf(token);
@@ -115,9 +127,8 @@ int ArgumentsAST::size() {
     return children()->size();
 }
 
-std::string ArgumentsAST::name(int i) {
-    Token *token = dynamic_cast<ASTLeaf*>(child(i))->token();
-    return token->text();
+ValuableAST *ArgumentsAST::get(int i) {
+    return dynamic_cast<ValuableAST*>(child(i));
 }
 
 CallFunctionAST::CallFunctionAST(std::string name, AST *args) : AST() {

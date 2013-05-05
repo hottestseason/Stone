@@ -29,6 +29,13 @@ private:
     Token* mToken;
 };
 
+class ValuableAST : public AST {
+public:
+    ValuableAST(std::string);
+    void accept(ASTVisitor*);
+    std::string getName();
+};
+
 class BinaryExprAST : public AST {
 public:
     BinaryExprAST(string, AST*);
@@ -45,7 +52,7 @@ public:
     ArgumentsAST(AST*);
     void accept(ASTVisitor*);
     int size();
-    std::string name(int);
+    ValuableAST *get(int);
 };
 
 class CallFunctionAST : public AST {

@@ -107,12 +107,7 @@ void CodeGenerator::visit(DefAST *ast) {
     auto *block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", lastFunction);
     builder->SetInsertPoint(block);
 
-    i = 0;
-    for (auto argIterator = lastFunction->arg_begin(); i != lastFunction->arg_size(); ++argIterator, ++i) {
-        auto alloca = createEntryBlockAlloca(lastFunction, ast->arguments()->name(i));
-        builder->CreateStore(argIterator, alloca);
-        (*namedValues)[ast->arguments()->name(i)] = alloca;
-    }
+    createArgumentAllocas(lastFunction, ast->arguments());
 
     ast->body()->accept(this);
     builder->CreateRet(lastValue);
@@ -153,4 +148,13 @@ void CodeGenerator::visitChildren(AST* ast) {
 llvm::AllocaInst *CodeGenerator::createEntryBlockAlloca(llvm::Function *function, const std::string &varName) {
     llvm::IRBuilder<> tmpBuilder(&function->getEntryBlock(), function->getEntryBlock().begin());
     return tmpBuilder.CreateAlloca(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 0, varName);
+}
+
+void CodeGenerator::createArgumentAllocas(llvm::Function *function, ArgumentsAST *arguments) {
+    int i = 0;
+    for (auto argIterator = lastFunction->arg_begin(); i != lastFunction->arg_size(); ++argIterator, ++i) {
+        auto alloca = createEntryBlockAlloca(lastFunction, arguments->name(i));
+        builder->CreateStore(argIterator, alloca);
+        (*namedValues)[arguments->name(i)] = alloca;
+    }
 }

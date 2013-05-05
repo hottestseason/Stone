@@ -44,4 +44,5 @@ private:
 
     void visitChildren(AST*);
     llvm::AllocaInst *createEntryBlockAlloca(llvm::Function*, const std::string&);
+    void createArgumentAllocas(llvm::Function *, ArgumentsAST*);
 };

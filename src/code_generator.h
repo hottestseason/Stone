@@ -39,8 +39,9 @@ private:
     llvm::IRBuilder<> *builder;
     llvm::Value *lastValue;
     llvm::Function *lastFunction;
-    std::map<std::string, llvm::Value*> *namedValues;
+    std::map<std::string, llvm::AllocaInst*> *namedValues;
     llvm::ExecutionEngine *executionEngine;
 
     void visitChildren(AST*);
+    llvm::AllocaInst *createEntryBlockAlloca(llvm::Function*, const std::string&);
 };

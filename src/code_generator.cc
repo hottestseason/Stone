@@ -10,7 +10,7 @@ CodeGenerator::CodeGenerator(TopAST *topAst) {
     this->topAst = topAst;
     module = new llvm::Module("top", llvm::getGlobalContext());
     builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
-    namedValues = new std::map<std::string, llvm::Value*>;
+    namedValues = new std::map<std::string, llvm::AllocaInst*>;
     executionEngine = llvm::EngineBuilder(module).create();
 }
 
@@ -25,7 +25,8 @@ void CodeGenerator::visit(ASTLeaf *ast) {
     if (ast->token()->isNumber()) {
         lastValue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(ast->token()->number()));
     } else {
-        lastValue = (*namedValues)[ast->token()->text()];
+        auto varName = ast->token()->text();
+        lastValue = builder->CreateLoad((*namedValues)[varName], varName);
     }
 }
 
@@ -97,13 +98,22 @@ void CodeGenerator::visit(DefAST *ast) {
     std::vector<llvm::Type*> argTypes(ast->arguments()->size(), llvm::Type::getDoubleTy(llvm::getGlobalContext()));
     auto *functionType = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()), argTypes, false);
     lastFunction = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, ast->name(), module);
+
     int i = 0;
     for (auto argIterator = lastFunction->arg_begin(); i != lastFunction->arg_size(); ++argIterator, ++i) {
         argIterator->setName(ast->arguments()->name(i));
-        (*namedValues)[ast->arguments()->name(i)] = argIterator;
     }
+
     auto *block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", lastFunction);
     builder->SetInsertPoint(block);
+
+    i = 0;
+    for (auto argIterator = lastFunction->arg_begin(); i != lastFunction->arg_size(); ++argIterator, ++i) {
+        auto alloca = createEntryBlockAlloca(lastFunction, ast->arguments()->name(i));
+        builder->CreateStore(argIterator, alloca);
+        (*namedValues)[ast->arguments()->name(i)] = alloca;
+    }
+
     ast->body()->accept(this);
     builder->CreateRet(lastValue);
 }
@@ -138,4 +148,9 @@ void CodeGenerator::visitChildren(AST* ast) {
     for (AST* child : *ast->children()) {
         child->accept(this);
     }
+}
+
+llvm::AllocaInst *CodeGenerator::createEntryBlockAlloca(llvm::Function *function, const std::string &varName) {
+    llvm::IRBuilder<> tmpBuilder(&function->getEntryBlock(), function->getEntryBlock().begin());
+    return tmpBuilder.CreateAlloca(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 0, varName);
 }

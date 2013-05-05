@@ -1,0 +1,17 @@
+def fib(n) {
+  if (n > 1) {
+    fib(n - 1) + fib(n - 2)
+  } else {
+    n
+  }
+}
+
+fib(10)
+
+def test() {
+  x = 4
+  x
+}
+
+test()
+

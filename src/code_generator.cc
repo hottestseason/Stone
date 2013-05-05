@@ -5,42 +5,42 @@
 #include <cstdio>
 #include "code_generator.h"
 
-CodeGenerator::CodeGenerator(TopAST *top) {
+CodeGenerator::CodeGenerator(TopAST *topAst) {
     llvm::InitializeNativeTarget();
-    mTop = top;
-    mModule = new llvm::Module("top", llvm::getGlobalContext());
-    mBuilder = new llvm::IRBuilder<>(llvm::getGlobalContext());
-    mNamedValues = new std::map<std::string, llvm::Value*>;
-    executionEngine = llvm::EngineBuilder(mModule).create();
+    this->topAst = topAst;
+    module = new llvm::Module("top", llvm::getGlobalContext());
+    builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
+    namedValues = new std::map<std::string, llvm::Value*>;
+    executionEngine = llvm::EngineBuilder(module).create();
 }
 
 CodeGenerator::~CodeGenerator() {
 }
 
 void CodeGenerator::generate() {
-    visit(mTop);
+    visit(topAst);
 }
 
 void CodeGenerator::visit(ASTLeaf *ast) {
     if (ast->token()->isNumber()) {
-        mValue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(ast->token()->number()));
+        lastValue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(ast->token()->number()));
     } else {
-        mValue = (*mNamedValues)[ast->token()->text()];
+        lastValue = (*namedValues)[ast->token()->text()];
     }
 }
 
 void CodeGenerator::visit(BinaryExprAST *ast) {
     ast->left()->accept(this);
-    auto lValue = mValue;
+    auto lValue = lastValue;
     ast->right()->accept(this);
-    auto rValue = mValue;
+    auto rValue = lastValue;
 
     if (ast->op() == "+") {
-        mValue = mBuilder->CreateFAdd(lValue, rValue);
+        lastValue = builder->CreateFAdd(lValue, rValue);
     } else if (ast->op() == "-") {
-        mValue = mBuilder->CreateFSub(lValue, rValue);
+        lastValue = builder->CreateFSub(lValue, rValue);
     } else if(ast->op() == ">") {
-        mValue = mBuilder->CreateUIToFP(mBuilder->CreateFCmpUGT(lValue, rValue), llvm::Type::getDoubleTy(llvm::getGlobalContext()));
+        lastValue = builder->CreateUIToFP(builder->CreateFCmpUGT(lValue, rValue), llvm::Type::getDoubleTy(llvm::getGlobalContext()));
     }
 }
 
@@ -49,63 +49,63 @@ void CodeGenerator::visit(ArgumentsAST *ast) {
 }
 
 void CodeGenerator::visit(CallFunctionAST *ast) {
-    auto function = mModule->getFunction(ast->name());
+    auto function = module->getFunction(ast->name());
     std::vector<llvm::Value*> argValues;
     for (AST* arg : *ast->arguments()->children()) {
         arg->accept(this);
-        argValues.push_back(mValue);
+        argValues.push_back(lastValue);
     }
-    mValue = mBuilder->CreateCall(function, argValues);
+    lastValue = builder->CreateCall(function, argValues);
 }
 
 void CodeGenerator::visit(IfAST *ast) {
     ast->condition()->accept(this);
-    auto condValue = mBuilder->CreateFCmpONE(mValue, llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)));
+    auto condValue = builder->CreateFCmpONE(lastValue, llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)));
 
-    auto currentFunction = mBuilder->GetInsertBlock()->getParent();
+    auto currentFunction = builder->GetInsertBlock()->getParent();
     auto thenBlock = llvm::BasicBlock::Create(llvm::getGlobalContext(), "then", currentFunction);
     auto elseBlock = llvm::BasicBlock::Create(llvm::getGlobalContext(), "else");
     auto mergeBlock = llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge");
-    mBuilder->CreateCondBr(condValue, thenBlock, elseBlock);
+    builder->CreateCondBr(condValue, thenBlock, elseBlock);
 
-    mBuilder->SetInsertPoint(thenBlock);
+    builder->SetInsertPoint(thenBlock);
     ast->thenBlock()->accept(this);
-    auto thenValue = mValue;
+    auto thenValue = lastValue;
 
-    mBuilder->CreateBr(mergeBlock);
-    thenBlock = mBuilder->GetInsertBlock();
+    builder->CreateBr(mergeBlock);
+    thenBlock = builder->GetInsertBlock();
 
     currentFunction->getBasicBlockList().push_back(elseBlock);
-    mBuilder->SetInsertPoint(elseBlock);
+    builder->SetInsertPoint(elseBlock);
     ast->elseBlock()->accept(this);
-    auto elseValue = mValue;
+    auto elseValue = lastValue;
 
-    mBuilder->CreateBr(mergeBlock);
-    elseBlock = mBuilder->GetInsertBlock();
+    builder->CreateBr(mergeBlock);
+    elseBlock = builder->GetInsertBlock();
 
     currentFunction->getBasicBlockList().push_back(mergeBlock);
-    mBuilder->SetInsertPoint(mergeBlock);
-    auto phiNode = mBuilder->CreatePHI(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 2);
+    builder->SetInsertPoint(mergeBlock);
+    auto phiNode = builder->CreatePHI(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 2);
     phiNode->addIncoming(thenValue, thenBlock);
     phiNode->addIncoming(elseValue, elseBlock);
 
-    mValue = phiNode;
+    lastValue = phiNode;
 }
 
 void CodeGenerator::visit(DefAST *ast) {
-    mNamedValues->clear();
+    namedValues->clear();
     std::vector<llvm::Type*> argTypes(ast->arguments()->size(), llvm::Type::getDoubleTy(llvm::getGlobalContext()));
     auto *functionType = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()), argTypes, false);
-    lastFunction = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, ast->name(), mModule);
+    lastFunction = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, ast->name(), module);
     int i = 0;
     for (auto argIterator = lastFunction->arg_begin(); i != lastFunction->arg_size(); ++argIterator, ++i) {
         argIterator->setName(ast->arguments()->name(i));
-        (*mNamedValues)[ast->arguments()->name(i)] = argIterator;
+        (*namedValues)[ast->arguments()->name(i)] = argIterator;
     }
     auto *block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", lastFunction);
-    mBuilder->SetInsertPoint(block);
+    builder->SetInsertPoint(block);
     ast->body()->accept(this);
-    mBuilder->CreateRet(mValue);
+    builder->CreateRet(lastValue);
 }
 
 void CodeGenerator::visit(TopAST *ast) {
@@ -127,7 +127,7 @@ void CodeGenerator::visit(BlockAST *ast) {
 }
 
 void CodeGenerator::dump() {
-    mModule->dump();
+    module->dump();
 }
 
 void CodeGenerator::error(const char *str) {

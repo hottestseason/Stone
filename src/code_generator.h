@@ -34,12 +34,12 @@ public:
     void error(const char *);
 
 private:
-    TopAST *mTop;
-    llvm::Module* mModule;
-    llvm::IRBuilder<> *mBuilder;
-    llvm::Value* mValue;
+    TopAST *topAst;
+    llvm::Module *module;
+    llvm::IRBuilder<> *builder;
+    llvm::Value *lastValue;
     llvm::Function *lastFunction;
-    std::map<std::string, llvm::Value*> *mNamedValues;
+    std::map<std::string, llvm::Value*> *namedValues;
     llvm::ExecutionEngine *executionEngine;
 
     void visitChildren(AST*);

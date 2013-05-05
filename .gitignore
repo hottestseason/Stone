@@ -1,0 +1,9 @@
+*.o
+
+src/.project
+src/.cproject
+
+src/parse.hh
+src/parse.cc
+src/lex.yy.cc
+src/stone

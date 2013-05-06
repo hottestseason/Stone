@@ -9,7 +9,6 @@ public:
     ~CodeGenerator();
 
     void execute(TopAST*);
-    void visit(AST*);
     void visit(ASTLeaf*);
     void visit(BinaryExprAST*);
     void visit(ArgumentsAST*);
@@ -19,7 +18,6 @@ public:
     void visit(TopAST*);
     void visit(BlockAST*);
     void visit(VariableAST*);
-    void dump();
     void error(const char *);
 
 private:

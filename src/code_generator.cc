@@ -183,10 +183,6 @@ void CodeGenerator::visit(VariableAST *ast) {
     lastValue = builder->CreateLoad((*namedValues)[ast->getName()]);
 }
 
-void CodeGenerator::dump() {
-    module->dump();
-}
-
 void CodeGenerator::error(const char *str) {
     std::cerr << "Error: " << str << std::endl;
 }

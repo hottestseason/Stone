@@ -1,10 +1,6 @@
 CC = clang
-#CXX = /usr/bin/clang++
 CXX = clang++
 
-#LLVMFLAGS = `llvm-config --cxxflags --ldflags --libs core`
-#CXXFLAGS = -g -std=c++11 -stdlib=libc++ $(LLVMFLAGS) -fcxx-exceptions -frtti 
-#LDFLAGS = -ll -lstdc++  -lc++
 LLVMFLAGS = `llvm-config --cppflags --ldflags --libs core jit native`
 CXXFLAGS = -g $(LLVMFLAGS) -fcxx-exceptions -frtti
 LDFLAGS = -ll

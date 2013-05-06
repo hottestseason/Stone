@@ -1,4 +1,4 @@
-def fib(n) {
+def fib(n:int):int {
   if (n > 1) {
     fib(n - 1) + fib(n - 2)
   } else {
@@ -6,10 +6,11 @@ def fib(n) {
   }
 }
 
-fib(10)
+fib(5 + 5)
 
-def test() {
-  x = 4
+def test():double {
+  x:double = 4.0
+  x = x + 1
   x
 }
 

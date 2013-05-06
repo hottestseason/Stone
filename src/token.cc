@@ -1,15 +1,23 @@
 #include <iostream>
 #include "token.h"
 
-double Token::number() {
-    throw "not number token";
+int Token::getInteger() {
+    throw "not integer token";
 }
 
-string Token::text() {
+double Token::getDouble() {
+    throw "not double token";
+}
+
+std::string Token::getText() {
     throw "not identifier token";
 }
 
-bool Token::isNumber() {
+bool Token::isInteger() {
+    return false;
+}
+
+bool Token::isDouble() {
     return false;
 }
 
@@ -17,24 +25,36 @@ bool Token::isIdentifier() {
     return false;
 }
 
-NumberToken::NumberToken(double number) {
-    mNumber = number;
+IntegerToken::IntegerToken(int integer) {
+    this->integer = integer;
 }
 
-double NumberToken::number() {
-    return mNumber;
+int IntegerToken::getInteger() {
+    return integer;
 }
 
-bool NumberToken::isNumber() {
+bool IntegerToken::isInteger() {
     return true;
 }
 
-IdentifierToken::IdentifierToken(string text) {
-    mText = text;
+DoubleToken::DoubleToken(double _double) {
+    this->_double = _double;
 }
 
-string IdentifierToken::text() {
-    return mText;
+double DoubleToken::getDouble() {
+    return _double;
+}
+
+bool DoubleToken::isDouble() {
+    return true;
+}
+
+IdentifierToken::IdentifierToken(std::string text) {
+    this->text = text;
+}
+
+std::string IdentifierToken::getText() {
+    return text;
 }
 
 bool IdentifierToken::isIdentifier() {

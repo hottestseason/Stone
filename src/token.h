@@ -1,30 +1,40 @@
 #pragma once
 
 #include <string>
-using namespace std;
 
 class Token {
 public:
-    virtual double number();
-    virtual string text();
-    virtual bool isNumber();
+    virtual int getInteger();
+    virtual double getDouble();
+    virtual std::string getText();
+    virtual bool isInteger();
+    virtual bool isDouble();
     virtual bool isIdentifier();
 };
 
-class NumberToken : public Token {
+class IntegerToken : public Token {
 public:
-    NumberToken(double);
-    double number();
-    bool isNumber();
+    IntegerToken(int);
+    int getInteger();
+    bool isInteger();
 private:
-    double mNumber;
+    int integer;
+};
+
+class DoubleToken : public Token {
+public:
+    DoubleToken(double);
+    double getDouble();
+    bool isDouble();
+private:
+    double _double;
 };
 
 class IdentifierToken : public Token {
 public:
-    IdentifierToken(string);
-    string text();
+    IdentifierToken(std::string);
+    std::string getText();
     bool isIdentifier();
 private:
-    string mText;
+    std::string text;
 };

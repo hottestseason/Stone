@@ -22,21 +22,23 @@ void CodeGenerator::generate() {
 }
 
 void CodeGenerator::visit(ASTLeaf *ast) {
-    if (ast->token()->isNumber()) {
-        lastValue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(ast->token()->number()));
+    if (ast->token()->isInteger()) {
+        lastValue = llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(64, ast->token()->getInteger()));
+    } else if (ast->token()->isDouble()) {
+        lastValue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(ast->token()->getDouble()));
     }
 }
 
 void CodeGenerator::visit(BinaryExprAST *ast) {
     if (ast->op() == "=") {
-        auto varName = dynamic_cast<ValuableAST*>(ast->left())->getName();
+        auto valuable = dynamic_cast<ValuableAST*>(ast->left());
         ast->right()->accept(this);
         auto rValue = lastValue;
-        if (!(*namedValues)[varName]) {
-            auto alloca = createEntryBlockAlloca(builder->GetInsertBlock()->getParent(), varName);
-            (*namedValues)[varName] = alloca;
+        if (!(*namedValues)[valuable->getName()]) {
+            auto alloca = createEntryBlockAlloca(builder->GetInsertBlock()->getParent(), valuable);
+            (*namedValues)[valuable->getName()] = alloca;
         }
-        builder->CreateStore(rValue, (*namedValues)[varName]);
+        builder->CreateStore(rValue, (*namedValues)[valuable->getName()]);
     } else {
         ast->left()->accept(this);
         auto lValue = lastValue;
@@ -44,11 +46,41 @@ void CodeGenerator::visit(BinaryExprAST *ast) {
         auto rValue = lastValue;
 
         if (ast->op() == "+") {
-            lastValue = builder->CreateFAdd(lValue, rValue);
+            if (lValue->getType()->isDoubleTy() || rValue->getType()->isDoubleTy()) {
+                if (lValue->getType()->isIntegerTy()) {
+                    lValue = builder->CreateSIToFP(lValue, getType("double"));
+                }
+                if (rValue->getType()->isIntegerTy()) {
+                    rValue = builder->CreateSIToFP(rValue, getType("double"));
+                }
+                lastValue = builder->CreateFAdd(lValue, rValue);
+            } else {
+                lastValue = builder->CreateAdd(lValue, rValue);
+            }
         } else if (ast->op() == "-") {
-            lastValue = builder->CreateFSub(lValue, rValue);
+            if (lValue->getType()->isDoubleTy() || rValue->getType()->isDoubleTy()) {
+                if (lValue->getType()->isIntegerTy()) {
+                    lValue = builder->CreateSIToFP(lValue, getType("double"));
+                }
+                if (rValue->getType()->isIntegerTy()) {
+                    rValue = builder->CreateSIToFP(rValue, getType("double"));
+                }
+                lastValue = builder->CreateFSub(lValue, rValue);
+            } else {
+                lastValue = builder->CreateSub(lValue, rValue);
+            }
         } else if(ast->op() == ">") {
-            lastValue = builder->CreateUIToFP(builder->CreateFCmpUGT(lValue, rValue), llvm::Type::getDoubleTy(llvm::getGlobalContext()));
+            if (lValue->getType()->isDoubleTy() || rValue->getType()->isDoubleTy()) {
+                if (lValue->getType()->isIntegerTy()) {
+                    lValue = builder->CreateSIToFP(lValue, getType("double"));
+                }
+                if (rValue->getType()->isIntegerTy()) {
+                    rValue = builder->CreateSIToFP(rValue, getType("double"));
+                }
+                lastValue = builder->CreateFCmpUGT(lValue, rValue);
+            } else {
+                lastValue = builder->CreateICmpUGT(lValue, rValue);
+            }
         }
     }
 }
@@ -69,7 +101,7 @@ void CodeGenerator::visit(CallFunctionAST *ast) {
 
 void CodeGenerator::visit(IfAST *ast) {
     ast->condition()->accept(this);
-    auto condValue = builder->CreateFCmpONE(lastValue, llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)));
+    auto condValue = lastValue;
 
     auto currentFunction = builder->GetInsertBlock()->getParent();
     auto thenBlock = llvm::BasicBlock::Create(llvm::getGlobalContext(), "then", currentFunction);
@@ -94,7 +126,7 @@ void CodeGenerator::visit(IfAST *ast) {
 
     currentFunction->getBasicBlockList().push_back(mergeBlock);
     builder->SetInsertPoint(mergeBlock);
-    auto phiNode = builder->CreatePHI(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 2);
+    auto phiNode = builder->CreatePHI(thenValue->getType(), 2);
     phiNode->addIncoming(thenValue, thenBlock);
     phiNode->addIncoming(elseValue, elseBlock);
 
@@ -103,19 +135,18 @@ void CodeGenerator::visit(IfAST *ast) {
 
 void CodeGenerator::visit(DefAST *ast) {
     namedValues->clear();
-    std::vector<llvm::Type*> argTypes(ast->arguments()->size(), llvm::Type::getDoubleTy(llvm::getGlobalContext()));
-    auto *functionType = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()), argTypes, false);
-    auto function = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, ast->name(), module);
-
-    int i = 0;
-    for (auto argIterator = function->arg_begin(); i != function->arg_size(); ++argIterator, ++i) {
-        argIterator->setName(ast->arguments()->get(i)->getName());
+    auto argTypes = createArgTypes(ast->arguments());
+    auto functionReturnType = getType(ast->getTypeName());
+    if (!functionReturnType) {
+        functionReturnType = getType(ast);
     }
+    auto *functionType = llvm::FunctionType::get(functionReturnType, *argTypes, false);
+    auto function = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, ast->name(), module);
 
     auto *block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", function);
     builder->SetInsertPoint(block);
 
-    createArgumentAllocas(function, ast->arguments());
+    setFunctionArguments(function, ast->arguments());
 
     ast->body()->accept(this);
     builder->CreateRet(lastValue);
@@ -129,10 +160,18 @@ void CodeGenerator::visit(TopAST *ast) {
             child->accept(this);
             lastValue->dump();
         } else {
-            (new DefAST("", child))->accept(this);
-            lastValue->dump();
-            double (*fp)() = (double (*)())(intptr_t)executionEngine->getPointerToFunction(dynamic_cast<llvm::Function*>(lastValue));
-            std::cout << "Evaluated to " << fp() << std::endl;
+            (new DefAST("", child, ""))->accept(this);
+            auto function = dynamic_cast<llvm::Function*>(lastValue);
+            function->dump();
+            std::cout << "Evaluated to ";
+            if (function->getReturnType()->isIntegerTy()) {
+                int (*fp)() = (int (*)())(intptr_t)executionEngine->getPointerToFunction(function);
+                std::cout << fp();
+            } else if (function->getReturnType()->isDoubleTy()) {
+                double (*fp)() = (double (*)())(intptr_t)executionEngine->getPointerToFunction(function);
+                std::cout <<  fp();
+            }
+            std::cout <<  std::endl;
         }
     }
 }
@@ -142,8 +181,7 @@ void CodeGenerator::visit(BlockAST *ast) {
 }
 
 void CodeGenerator::visit(ValuableAST *ast) {
-    auto varName = ast->getName();
-    lastValue = builder->CreateLoad((*namedValues)[varName], varName);
+    lastValue = builder->CreateLoad((*namedValues)[ast->getName()]);
 }
 
 void CodeGenerator::dump() {
@@ -160,17 +198,58 @@ void CodeGenerator::visitChildren(AST* ast) {
     }
 }
 
-llvm::AllocaInst *CodeGenerator::createEntryBlockAlloca(llvm::Function *function, const std::string &varName) {
+llvm::AllocaInst *CodeGenerator::createEntryBlockAlloca(llvm::Function *function, ValuableAST *valuable) {
     llvm::IRBuilder<> tmpBuilder(&function->getEntryBlock(), function->getEntryBlock().begin());
-    return tmpBuilder.CreateAlloca(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 0, varName);
+    return tmpBuilder.CreateAlloca(getType(valuable->getTypeName()), 0, valuable->getName());
 }
 
-void CodeGenerator::createArgumentAllocas(llvm::Function *function, ArgumentsAST *arguments) {
+void CodeGenerator::setFunctionArguments(llvm::Function *function, ArgumentsAST *arguments) {
     int i = 0;
     for (auto argIterator = function->arg_begin(); i != function->arg_size(); ++argIterator, ++i) {
+        argIterator->setName(arguments->get(i)->getName());
+    }
+    i = 0;
+    for (auto argIterator = function->arg_begin(); i != function->arg_size(); ++argIterator, ++i) {
         auto arg = arguments->get(i);
-        auto alloca = createEntryBlockAlloca(function, arg->getName());
+        auto alloca = createEntryBlockAlloca(function, arg);
         builder->CreateStore(argIterator, alloca);
         (*namedValues)[arg->getName()] = alloca;
     }
+}
+
+llvm::Type *CodeGenerator::getType(const std::string &type) {
+    if (type == "int") {
+        return llvm::Type::getInt64Ty(llvm::getGlobalContext());
+    } else if (type == "double") {
+        return llvm::Type::getDoubleTy(llvm::getGlobalContext());
+    } else if (type == "void") {
+        return llvm::Type::getVoidTy(llvm::getGlobalContext());
+    } else {
+        return NULL;
+    }
+}
+
+llvm::Type *CodeGenerator::getType(DefAST *ast) {
+    namedValues->clear();
+    auto argTypes = createArgTypes(ast->arguments());
+
+    auto *functionType = llvm::FunctionType::get(getType("void"), *argTypes, false);
+    auto function = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, ast->name(), module);
+
+    auto *block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", function);
+    builder->SetInsertPoint(block);
+
+    setFunctionArguments(function, ast->arguments());
+
+    ast->body()->accept(this);
+    function->eraseFromParent();
+    return lastValue->getType();
+}
+
+std::vector<llvm::Type*> *CodeGenerator::createArgTypes(ArgumentsAST *args) {
+    auto argTypes = new std::vector<llvm::Type*>;
+    for (int i = 0; i < args->size(); i++) {
+        argTypes->push_back(getType(args->get(i)->getTypeName()));
+    }
+    return argTypes;
 }

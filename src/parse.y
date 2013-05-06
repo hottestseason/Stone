@@ -5,8 +5,6 @@
 #include <iostream>
 #include "ast.h"
 
-using namespace std;
-
 void yyerror(const char *msg) {
     fprintf(stderr, "parser error near %s\n", msg);
 }
@@ -21,13 +19,15 @@ TopAST *ast;
 %}
 
 %union {
-    double number;
+	int integer_type;
+    double double_type;
     AST *ast;
-    string *str;
+    std::string *str;
 }
 
-%token<number> tNUMBER
-%token tLBRACE tRBRACE tLPAREN tRPAREN tADD tMINUS tMUL tDIV tGT tLT tSET tEQL tCOMMA tSEMICOLON tEOL tIF tELSE tDEF
+%token<integer_type> tINTEGER
+%token<double_type> tDOUBLE
+%token tLBRACE tRBRACE tLPAREN tRPAREN tADD tMINUS tMUL tDIV tGT tLT tSET tEQL tCOMMA tSEMICOLON tCOLON tEOL tIF tELSE tDEF
 %token<str> tIDENTIFIER
 
 %type<ast> program statements statement block expression primary arguments
@@ -49,7 +49,7 @@ statements:
 
 statement:
       { $$ = NULL; }
-    | tDEF tIDENTIFIER tLPAREN arguments tRPAREN block { $$ = new DefAST(*$2, $4, $6); }
+    | tDEF tIDENTIFIER tLPAREN arguments tRPAREN tCOLON tIDENTIFIER block { $$ = new DefAST(*$2, $4, $8, *$7); }
     | tIF expression block { $$ = new IfAST($2, $3); }
     | tIF expression block tELSE block { $$ = new IfAST($2, $3, $5); }
     | expression { $$ = $1; }
@@ -70,8 +70,10 @@ expression:
     | tLPAREN expression tRPAREN { $$ = $2; }
 
 primary:
-      tNUMBER { $$ = new ASTLeaf(new NumberToken($1)); }
+      tINTEGER { $$ = new ASTLeaf(new IntegerToken($1)); }
+    | tDOUBLE { $$ = new ASTLeaf(new DoubleToken($1)); }
     | tIDENTIFIER { $$ = new ValuableAST(*$1); }
+    | tIDENTIFIER tCOLON tIDENTIFIER { $$ = new ValuableAST(*$1, *$3); }
     | tIDENTIFIER tLPAREN arguments tRPAREN { $$ = new CallFunctionAST(*$1, $3); }
 
 arguments:

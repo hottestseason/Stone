@@ -4,6 +4,7 @@
 #include "llvm/IRBuilder.h"
 #include "llvm/DerivedTypes.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/GenericValue.h"
 #include "llvm/ExecutionEngine/JIT.h"
 #include "llvm/PassManager.h"
 #include "llvm/Analysis/Verifier.h"
@@ -43,6 +44,9 @@ private:
     llvm::ExecutionEngine *executionEngine;
 
     void visitChildren(AST*);
-    llvm::AllocaInst *createEntryBlockAlloca(llvm::Function*, const std::string&);
-    void createArgumentAllocas(llvm::Function *, ArgumentsAST*);
+    llvm::AllocaInst *createEntryBlockAlloca(llvm::Function*, ValuableAST*);
+    void setFunctionArguments(llvm::Function *, ArgumentsAST*);
+    llvm::Type *getType(const std::string&);
+    llvm::Type *getType(DefAST*);
+    std::vector<llvm::Type*> *createArgTypes(ArgumentsAST*);
 };

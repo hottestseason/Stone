@@ -8,6 +8,7 @@
 
 DIGIT       [0-9]
 INTEGER     {DIGIT}+
+DOUBLE      {INTEGER}+\.{INTEGER}
 
 %%
 
@@ -25,6 +26,7 @@ INTEGER     {DIGIT}+
 "==" return tEQL;
 "," return tCOMMA;
 ";" return tSEMICOLON;
+":" return tCOLON;
 "\n" return tEOL;
 
 "if" return tIF;
@@ -32,12 +34,17 @@ INTEGER     {DIGIT}+
 "def" return tDEF;
 
 {INTEGER} {
-    yylval.number = atof(yytext);
-    return tNUMBER;
+    yylval.integer_type = atoi(yytext);
+    return tINTEGER;
+}
+
+{DOUBLE} {
+    yylval.double_type = atof(yytext);
+    return tDOUBLE;
 }
 
 [A-Za-z][A-Za-z0-9]* {
-    yylval.str = new string(yytext);
+    yylval.str = new std::string(yytext);
     return tIDENTIFIER;
 }
 

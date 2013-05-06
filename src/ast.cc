@@ -72,24 +72,24 @@ void ASTLeaf::accept(ASTVisitor *visitor) {
     visitor->visit(this);
 }
 
-ValuableAST::ValuableAST(std::string name) : AST() {
+VariableAST::VariableAST(std::string name) : AST() {
     addChild(new ASTLeaf(new IdentifierToken(name)));
 }
 
-ValuableAST::ValuableAST(std::string name, std::string type) : AST() {
+VariableAST::VariableAST(std::string name, std::string type) : AST() {
     addChild(new ASTLeaf(new IdentifierToken(name)));
     addChild(new ASTLeaf(new IdentifierToken(type)));
 }
 
-void ValuableAST::accept(ASTVisitor *visitor) {
+void VariableAST::accept(ASTVisitor *visitor) {
     visitor->visit(this);
 }
 
-std::string ValuableAST::getName() {
+std::string VariableAST::getName() {
     return dynamic_cast<ASTLeaf*>(child(0))->token()->getText();
 }
 
-std::string ValuableAST::getTypeName() {
+std::string VariableAST::getTypeName() {
     return dynamic_cast<ASTLeaf*>(child(1))->token()->getText();
 }
 
@@ -138,8 +138,8 @@ int ArgumentsAST::size() {
     return children()->size();
 }
 
-ValuableAST *ArgumentsAST::get(int i) {
-    return dynamic_cast<ValuableAST*>(child(i));
+VariableAST *ArgumentsAST::get(int i) {
+    return dynamic_cast<VariableAST*>(child(i));
 }
 
 CallFunctionAST::CallFunctionAST(std::string name, AST *args) : AST() {

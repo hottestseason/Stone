@@ -72,8 +72,8 @@ expression:
 primary:
       tINTEGER { $$ = new ASTLeaf(new IntegerToken($1)); }
     | tDOUBLE { $$ = new ASTLeaf(new DoubleToken($1)); }
-    | tIDENTIFIER { $$ = new ValuableAST(*$1); }
-    | tIDENTIFIER tCOLON tIDENTIFIER { $$ = new ValuableAST(*$1, *$3); }
+    | tIDENTIFIER { $$ = new VariableAST(*$1); }
+    | tIDENTIFIER tCOLON tIDENTIFIER { $$ = new VariableAST(*$1, *$3); }
     | tIDENTIFIER tLPAREN arguments tRPAREN { $$ = new CallFunctionAST(*$1, $3); }
 
 arguments:

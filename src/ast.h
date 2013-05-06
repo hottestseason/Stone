@@ -29,10 +29,10 @@ private:
     Token* mToken;
 };
 
-class ValuableAST : public AST {
+class VariableAST : public AST {
 public:
-    ValuableAST(std::string);
-    ValuableAST(std::string, std::string);
+    VariableAST(std::string);
+    VariableAST(std::string, std::string);
     void accept(ASTVisitor*);
     std::string getName();
     std::string getTypeName();
@@ -54,7 +54,7 @@ public:
     ArgumentsAST(AST*);
     void accept(ASTVisitor*);
     int size();
-    ValuableAST *get(int);
+    VariableAST *get(int);
 };
 
 class CallFunctionAST : public AST {

@@ -30,7 +30,7 @@ public:
     void visit(DefAST*);
     void visit(TopAST*);
     void visit(BlockAST*);
-    void visit(ValuableAST*);
+    void visit(VariableAST*);
     void dump();
     void error(const char *);
 
@@ -42,7 +42,7 @@ private:
     llvm::ExecutionEngine *executionEngine;
 
     void visitChildren(AST*);
-    llvm::AllocaInst *createEntryBlockAlloca(llvm::Function*, ValuableAST*);
+    llvm::AllocaInst *createEntryBlockAlloca(llvm::Function*, VariableAST*);
     void setFunctionArguments(llvm::Function *, ArgumentsAST*);
     llvm::Type *getType(const std::string&);
     llvm::Type *getType(DefAST*);

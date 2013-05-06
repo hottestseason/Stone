@@ -12,6 +12,6 @@ public:
     virtual void visit(DefAST*) = 0;
     virtual void visit(TopAST*) = 0;
     virtual void visit(BlockAST*) = 0;
-    virtual void visit(ValuableAST*) = 0;
+    virtual void visit(VariableAST*) = 0;
     virtual ~ASTVisitor();
 };

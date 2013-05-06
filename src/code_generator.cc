@@ -30,14 +30,14 @@ void CodeGenerator::visit(ASTLeaf *ast) {
 
 void CodeGenerator::visit(BinaryExprAST *ast) {
     if (ast->op() == "=") {
-        auto valuable = dynamic_cast<ValuableAST*>(ast->left());
+        auto variable = dynamic_cast<VariableAST*>(ast->left());
         ast->right()->accept(this);
         auto rValue = lastValue;
-        if (!(*namedValues)[valuable->getName()]) {
-            auto alloca = createEntryBlockAlloca(builder->GetInsertBlock()->getParent(), valuable);
-            (*namedValues)[valuable->getName()] = alloca;
+        if (!(*namedValues)[variable->getName()]) {
+            auto alloca = createEntryBlockAlloca(builder->GetInsertBlock()->getParent(), variable);
+            (*namedValues)[variable->getName()] = alloca;
         }
-        builder->CreateStore(rValue, (*namedValues)[valuable->getName()]);
+        builder->CreateStore(rValue, (*namedValues)[variable->getName()]);
     } else {
         ast->left()->accept(this);
         auto lValue = lastValue;
@@ -179,7 +179,7 @@ void CodeGenerator::visit(BlockAST *ast) {
     visitChildren(ast);
 }
 
-void CodeGenerator::visit(ValuableAST *ast) {
+void CodeGenerator::visit(VariableAST *ast) {
     lastValue = builder->CreateLoad((*namedValues)[ast->getName()]);
 }
 
@@ -197,9 +197,9 @@ void CodeGenerator::visitChildren(AST* ast) {
     }
 }
 
-llvm::AllocaInst *CodeGenerator::createEntryBlockAlloca(llvm::Function *function, ValuableAST *valuable) {
+llvm::AllocaInst *CodeGenerator::createEntryBlockAlloca(llvm::Function *function, VariableAST *variable) {
     llvm::IRBuilder<> tmpBuilder(&function->getEntryBlock(), function->getEntryBlock().begin());
-    return tmpBuilder.CreateAlloca(getType(valuable->getTypeName()), 0, valuable->getName());
+    return tmpBuilder.CreateAlloca(getType(variable->getTypeName()), 0, variable->getName());
 }
 
 void CodeGenerator::setFunctionArguments(llvm::Function *function, ArgumentsAST *arguments) {

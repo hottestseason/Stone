@@ -5,9 +5,8 @@
 #include <cstdio>
 #include "code_generator.h"
 
-CodeGenerator::CodeGenerator(TopAST *topAst) {
+CodeGenerator::CodeGenerator() {
     llvm::InitializeNativeTarget();
-    this->topAst = topAst;
     module = new llvm::Module("top", llvm::getGlobalContext());
     builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
     namedValues = new std::map<std::string, llvm::AllocaInst*>;
@@ -17,7 +16,7 @@ CodeGenerator::CodeGenerator(TopAST *topAst) {
 CodeGenerator::~CodeGenerator() {
 }
 
-void CodeGenerator::generate() {
+void CodeGenerator::execute(TopAST *topAst) {
     visit(topAst);
 }
 

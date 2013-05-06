@@ -17,11 +17,10 @@
 
 class CodeGenerator : ASTVisitor {
 public:
-    CodeGenerator(TopAST*);
+    CodeGenerator();
     ~CodeGenerator();
 
-    void execute();
-    void generate();
+    void execute(TopAST*);
     void visit(AST*);
     void visit(ASTLeaf*);
     void visit(BinaryExprAST*);
@@ -36,7 +35,6 @@ public:
     void error(const char *);
 
 private:
-    TopAST *topAst;
     llvm::Module *module;
     llvm::IRBuilder<> *builder;
     llvm::Value *lastValue;

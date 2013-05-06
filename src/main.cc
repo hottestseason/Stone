@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 	}
     yyparse();
     cout << *ast << endl;
-    CodeGenerator generator(ast);
-    generator.generate();
+    CodeGenerator generator;
+    generator.execute(ast);
     return 0;
 }

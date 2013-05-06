@@ -4,8 +4,6 @@
 #include "parse.hh"
 #include "code_generator.h"
 
-using namespace std;
-
 extern "C" {
     int yyparse();
     int yylex();
@@ -21,7 +19,7 @@ int main(int argc, char *argv[]) {
         yyin = stdin;
 	}
     yyparse();
-    cout << *ast << endl;
+    std::cout << *ast << std::endl;
     CodeGenerator generator;
     generator.execute(ast);
     return 0;

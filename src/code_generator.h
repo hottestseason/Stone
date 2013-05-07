@@ -26,6 +26,7 @@ private:
     llvm::Value *lastValue;
     std::map<std::string, llvm::AllocaInst*> *namedValues;
     llvm::ExecutionEngine *executionEngine;
+    llvm::FunctionPassManager *functionPassManager;
 
     void visitChildren(AST*);
     llvm::AllocaInst *createEntryBlockAlloca(llvm::Function*, VariableAST*);

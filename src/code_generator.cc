@@ -11,6 +11,14 @@ CodeGenerator::CodeGenerator() {
     builder = new llvm::IRBuilder<>(llvm::getGlobalContext());
     namedValues = new std::map<std::string, llvm::AllocaInst*>;
     executionEngine = llvm::EngineBuilder(module).create();
+    functionPassManager = new llvm::FunctionPassManager(module);
+    functionPassManager->add(new llvm::DataLayout(*executionEngine->getDataLayout()));
+    functionPassManager->add(llvm::createBasicAliasAnalysisPass());
+    functionPassManager->add(llvm::createInstructionCombiningPass());
+    functionPassManager->add(llvm::createReassociatePass());
+    functionPassManager->add(llvm::createGVNPass());
+    functionPassManager->add(llvm::createCFGSimplificationPass());
+    functionPassManager->doInitialization();
 }
 
 CodeGenerator::~CodeGenerator() {
@@ -149,6 +157,8 @@ void CodeGenerator::visit(DefAST *ast) {
 
     ast->body()->accept(this);
     builder->CreateRet(lastValue);
+
+    functionPassManager->run(*function);
 
     lastValue = function;
 }

@@ -99,7 +99,7 @@ void CodeGenerator::visit(ArgumentsAST *ast) {
 void CodeGenerator::visit(CallFunctionAST *ast) {
     auto function = module->getFunction(ast->name());
     std::vector<llvm::Value*> argValues;
-    for (AST* arg : *ast->arguments()->children()) {
+    for (AST* arg : *ast->arguments()->getChildren()) {
         arg->accept(this);
         argValues.push_back(lastValue);
     }
@@ -164,7 +164,7 @@ void CodeGenerator::visit(DefAST *ast) {
 }
 
 void CodeGenerator::visit(TopAST *ast) {
-    for (AST* child : *ast->children()) {
+    for (AST* child : *ast->getChildren()) {
         if (typeid(*child) == typeid(DefAST)) {
             child->accept(this);
             lastValue->dump();
@@ -198,7 +198,7 @@ void CodeGenerator::error(const char *str) {
 }
 
 void CodeGenerator::visitChildren(AST* ast) {
-    for (AST* child : *ast->children()) {
+    for (AST* child : *ast->getChildren()) {
         child->accept(this);
     }
 }

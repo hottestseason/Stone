@@ -5,41 +5,37 @@
 #include "ast_visitor.h"
 
 AST::AST() {
-    mChildren = new std::vector<AST*>;
+    children = new std::vector<AST*>;
 }
 
 AST::AST(AST *ast) {
-    mChildren = new std::vector<AST*>;
+    children = new std::vector<AST*>;
     addChild(ast);
 }
 
 AST::AST(AST *lAst, AST *rAST) {
-    mChildren = new std::vector<AST*>;
+    children = new std::vector<AST*>;
     addChild(lAst);
     addChild(rAST);
 }
 
-std::vector<AST*>* AST::children() const {
-    return mChildren;
+std::vector<AST*>* AST::getChildren() const {
+    return children;
 }
 
 AST* AST::child(int i) const {
-    if (children()->size() > i) {
-        return children()->at(i);
-    } else {
-        return NULL;
-    }
+    return (*children)[i];
 }
 
 void AST::addChild(AST *ast) {
     if (ast) {
-        children()->push_back(ast);
+        children->push_back(ast);
     }
 }
 
 void AST::print(std::ostream &out) const {
     out << "( ";
-    for (AST* child : *children()) {
+    for (AST* child : *children) {
         out << *child << " ";
     }
     out << ")";
@@ -135,7 +131,7 @@ void ArgumentsAST::accept(ASTVisitor *visitor) {
 }
 
 int ArgumentsAST::size() {
-    return children()->size();
+    return children->size();
 }
 
 VariableAST *ArgumentsAST::get(int i) {

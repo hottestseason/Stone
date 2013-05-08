@@ -9,14 +9,14 @@ public:
     AST();
     AST(AST*);
     AST(AST*, AST*);
-    std::vector<AST*>* children() const;
+    std::vector<AST*>* getChildren() const;
     AST* child(int) const;
     void addChild(AST*);
     virtual void print(std::ostream&) const;
     virtual void accept(ASTVisitor*) = 0;
     friend std::ostream& operator<<(std::ostream&, const AST&);
-private:
-    std::vector<AST*>* mChildren;
+protected:
+    std::vector<AST*>* children;
 };
 
 class ASTLeaf : public AST {

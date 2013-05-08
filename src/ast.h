@@ -21,12 +21,13 @@ protected:
 
 class ASTLeaf : public AST {
 public:
+    ASTLeaf();
     ASTLeaf(Token*);
-    Token* token() const;
+    Token* getToken() const;
     void print(std::ostream&) const;
     void accept(ASTVisitor*);
 private:
-    Token* mToken;
+    Token* token;
 };
 
 class VariableAST : public AST {

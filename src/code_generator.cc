@@ -29,10 +29,11 @@ void CodeGenerator::execute(TopAST *topAst) {
 }
 
 void CodeGenerator::visit(ASTLeaf *ast) {
-    if (ast->token()->isInteger()) {
-        lastValue = llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(64, ast->token()->getInteger()));
-    } else if (ast->token()->isDouble()) {
-        lastValue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(ast->token()->getDouble()));
+    Token *token = ast->getToken();
+    if (token->isInteger()) {
+        lastValue = llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(64, token->getInteger()));
+    } else if (token->isDouble()) {
+        lastValue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(token->getDouble()));
     }
 }
 

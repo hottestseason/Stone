@@ -46,21 +46,20 @@ std::ostream& operator<<(std::ostream &out, const AST &ast) {
     return out;
 }
 
-ASTLeaf::ASTLeaf(Token *token) {
-    mToken = token;
-}
+ASTLeaf::ASTLeaf() {}
+ASTLeaf::ASTLeaf(Token *token) : token(token) {}
 
-Token* ASTLeaf::token() const {
-    return mToken;
+Token* ASTLeaf::getToken() const {
+    return token;
 }
 
 void ASTLeaf::print(std::ostream &out) const {
-    if (token()->isInteger()) {
-        out << token()->getInteger();
-    } else if (token()->isDouble()) {
-        out << token()->getDouble();
-    } else if (token()->isIdentifier()) {
-        out << token()->getText();
+    if (token->isInteger()) {
+        out << token->getInteger();
+    } else if (token->isDouble()) {
+        out << token->getDouble();
+    } else if (token->isIdentifier()) {
+        out << token->getText();
     }
 }
 
@@ -82,11 +81,11 @@ void VariableAST::accept(ASTVisitor *visitor) {
 }
 
 std::string VariableAST::getName() {
-    return dynamic_cast<ASTLeaf*>(child(0))->token()->getText();
+    return dynamic_cast<ASTLeaf*>(child(0))->getToken()->getText();
 }
 
 std::string VariableAST::getTypeName() {
-    return dynamic_cast<ASTLeaf*>(child(1))->token()->getText();
+    return dynamic_cast<ASTLeaf*>(child(1))->getToken()->getText();
 }
 
 BinaryExprAST::BinaryExprAST(std::string tokenName, AST *ast) : AST() {
@@ -105,7 +104,7 @@ BinaryExprAST::BinaryExprAST(std::string tokenName, AST *lAst, AST *rAst) : AST(
 }
 
 std::string BinaryExprAST::op() {
-    return dynamic_cast<ASTLeaf*>(child(0))->token()->getText();
+    return dynamic_cast<ASTLeaf*>(child(0))->getToken()->getText();
 }
 
 AST* BinaryExprAST::left() {
@@ -150,7 +149,7 @@ void CallFunctionAST::accept(ASTVisitor *visitor) {
 }
 
 std::string CallFunctionAST::name() {
-    return dynamic_cast<ASTLeaf*>(child(0))->token()->getText();
+    return dynamic_cast<ASTLeaf*>(child(0))->getToken()->getText();
 }
 
 ArgumentsAST* CallFunctionAST::arguments() {
@@ -207,7 +206,7 @@ void DefAST::print(std::ostream &out) const {
 }
 
 std::string DefAST::name() const {
-    return dynamic_cast<ASTLeaf *>(child(0))->token()->getText();
+    return dynamic_cast<ASTLeaf *>(child(0))->getToken()->getText();
 }
 
 ArgumentsAST* DefAST::arguments() const {
@@ -219,7 +218,7 @@ AST* DefAST::body() const {
 }
 
 std::string DefAST::getTypeName() {
-    return dynamic_cast<ASTLeaf *>(child(3))->token()->getText();;
+    return dynamic_cast<ASTLeaf *>(child(3))->getToken()->getText();;
 }
 
 void DefAST::accept(ASTVisitor *visitor) {

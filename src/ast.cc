@@ -10,13 +10,13 @@ AST::AST() {
 
 AST::AST(AST *ast) {
     children = new std::vector<AST*>;
-    addChild(ast);
+    add(ast);
 }
 
 AST::AST(AST *lAst, AST *rAST) {
     children = new std::vector<AST*>;
-    addChild(lAst);
-    addChild(rAST);
+    add(lAst);
+    add(rAST);
 }
 
 std::vector<AST*>* AST::getChildren() const {
@@ -27,7 +27,7 @@ AST* AST::child(int i) const {
     return (*children)[i];
 }
 
-void AST::addChild(AST *ast) {
+void AST::add(AST *ast) {
     if (ast) {
         children->push_back(ast);
     }
@@ -68,12 +68,12 @@ void ASTLeaf::accept(ASTVisitor *visitor) {
 }
 
 VariableAST::VariableAST(std::string name) : AST() {
-    addChild(new ASTLeaf(new IdentifierToken(name)));
+    add(new ASTLeaf(new IdentifierToken(name)));
 }
 
 VariableAST::VariableAST(std::string name, std::string type) : AST() {
-    addChild(new ASTLeaf(new IdentifierToken(name)));
-    addChild(new ASTLeaf(new IdentifierToken(type)));
+    add(new ASTLeaf(new IdentifierToken(name)));
+    add(new ASTLeaf(new IdentifierToken(type)));
 }
 
 void VariableAST::accept(ASTVisitor *visitor) {
@@ -91,16 +91,16 @@ std::string VariableAST::getTypeName() {
 BinaryExprAST::BinaryExprAST(std::string tokenName, AST *ast) : AST() {
     Token* token = new IdentifierToken(tokenName);
     ASTLeaf* op = new ASTLeaf(token);
-    addChild(op);
-    addChild(ast);
+    add(op);
+    add(ast);
 }
 
 BinaryExprAST::BinaryExprAST(std::string tokenName, AST *lAst, AST *rAst) : AST() {
     Token* token = new IdentifierToken(tokenName);
     ASTLeaf* op = new ASTLeaf(token);
-    addChild(op);
-    addChild(lAst);
-    addChild(rAst);
+    add(op);
+    add(lAst);
+    add(rAst);
 }
 
 std::string BinaryExprAST::op() {
@@ -140,8 +140,8 @@ VariableAST *ArgumentsAST::get(int i) {
 CallFunctionAST::CallFunctionAST(std::string name, AST *args) : AST() {
     Token* token = new IdentifierToken(name);
     ASTLeaf* funName = new ASTLeaf(token);
-    addChild(funName);
-    addChild(args);
+    add(funName);
+    add(args);
 }
 
 void CallFunctionAST::accept(ASTVisitor *visitor) {
@@ -160,7 +160,7 @@ IfAST::IfAST(AST *expr, AST *block) : AST(expr, block) {
 }
 
 IfAST::IfAST(AST *expr, AST *thenBlock, AST *elseBlock) : AST(expr, thenBlock) {
-    addChild(elseBlock);
+    add(elseBlock);
 }
 
 void IfAST::print(std::ostream &out) const {
@@ -188,17 +188,17 @@ void IfAST::accept(ASTVisitor *visitor) {
 }
 
 DefAST::DefAST(std::string name, AST *body, std::string typeName) {
-    addChild(new ASTLeaf(new IdentifierToken(name)));
-    addChild(new ArgumentsAST());
-    addChild(body);
-    addChild(new ASTLeaf(new IdentifierToken(typeName)));
+    add(new ASTLeaf(new IdentifierToken(name)));
+    add(new ArgumentsAST());
+    add(body);
+    add(new ASTLeaf(new IdentifierToken(typeName)));
 }
 
 DefAST::DefAST(std::string name, AST *args, AST *body, std::string typeName) : AST() {
-    addChild(new ASTLeaf(new IdentifierToken(name)));
-    addChild(args);
-    addChild(body);
-    addChild(new ASTLeaf(new IdentifierToken(typeName)));
+    add(new ASTLeaf(new IdentifierToken(name)));
+    add(args);
+    add(body);
+    add(new ASTLeaf(new IdentifierToken(typeName)));
 }
 
 void DefAST::print(std::ostream &out) const {

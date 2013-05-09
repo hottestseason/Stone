@@ -11,7 +11,7 @@ public:
     AST(AST*, AST*);
     std::vector<AST*>* getChildren() const;
     AST* child(int) const;
-    void addChild(AST*);
+    void add(AST*);
     virtual void print(std::ostream&) const;
     virtual void accept(ASTVisitor*) = 0;
     friend std::ostream& operator<<(std::ostream&, const AST&);

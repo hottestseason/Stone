@@ -43,7 +43,7 @@ program:
 
 statements:
       statement { $$ = new BlockAST($1); }
-    | statements tEOL statement { $$->addChild($3); }
+    | statements tEOL statement { $$->add($3); }
 
 statement:
       { $$ = NULL; }
@@ -77,6 +77,6 @@ primary:
 arguments:
       { $$ = new ArgumentsAST(); }
     | expression { $$ = new ArgumentsAST($1); }
-    | arguments tCOMMA expression { $$->addChild($3); }
+    | arguments tCOMMA expression { $$->add($3); }
 
 %%

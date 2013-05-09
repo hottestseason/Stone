@@ -9,15 +9,11 @@ AST::AST() {
     namedChildren = new std::map<std::string, AST*>;
 }
 
-AST::AST(AST *ast) {
-    children = new std::vector<AST*>;
-    namedChildren = new std::map<std::string, AST*>;
+AST::AST(AST *ast) : AST() {
     add(ast);
 }
 
-AST::AST(AST *lAst, AST *rAST) {
-    children = new std::vector<AST*>;
-    namedChildren = new std::map<std::string, AST*>;
+AST::AST(AST *lAst, AST *rAST) : AST() {
     add(lAst);
     add(rAST);
 }
@@ -82,8 +78,7 @@ VariableAST::VariableAST(std::string name) : AST() {
     add("name", new ASTLeaf(new IdentifierToken(name)));
 }
 
-VariableAST::VariableAST(std::string name, std::string type) : AST() {
-    add("name", new ASTLeaf(new IdentifierToken(name)));
+VariableAST::VariableAST(std::string name, std::string type) : VariableAST(name) {
     add("typeName", new ASTLeaf(new IdentifierToken(type)));
 }
 
@@ -106,11 +101,7 @@ BinaryExprAST::BinaryExprAST(std::string tokenName, AST *ast) : AST() {
     add(ast);
 }
 
-BinaryExprAST::BinaryExprAST(std::string tokenName, AST *lAst, AST *rAst) : AST() {
-    Token* token = new IdentifierToken(tokenName);
-    ASTLeaf* op = new ASTLeaf(token);
-    add(op);
-    add(lAst);
+BinaryExprAST::BinaryExprAST(std::string tokenName, AST *lAst, AST *rAst) : BinaryExprAST(tokenName, lAst) {
     add(rAst);
 }
 
@@ -198,19 +189,14 @@ void IfAST::accept(ASTVisitor *visitor) {
     visitor->visit(this);
 }
 
-DefAST::DefAST(std::string name, AST *body, std::string typeName) {
-    add(new ASTLeaf(new IdentifierToken(name)));
-    add(new ArgumentsAST());
-    add(body);
-    add(new ASTLeaf(new IdentifierToken(typeName)));
-}
-
 DefAST::DefAST(std::string name, AST *args, AST *body, std::string typeName) : AST() {
     add(new ASTLeaf(new IdentifierToken(name)));
     add(args);
     add(body);
     add(new ASTLeaf(new IdentifierToken(typeName)));
 }
+
+DefAST::DefAST(std::string name, AST *body, std::string typeName) : DefAST(name, new ArgumentsAST(), body, typeName) {}
 
 void DefAST::print(std::ostream &out) const {
     out << "( def " << name() << *arguments() << " " << *body() << " )";

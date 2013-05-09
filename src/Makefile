@@ -1,8 +1,7 @@
-CC = clang
-CXX = clang++
+CXX = g++-4.8
 
 LLVMFLAGS = `llvm-config --cppflags --ldflags --libs core jit native`
-CXXFLAGS = -g $(LLVMFLAGS) -fcxx-exceptions -frtti
+CXXFLAGS = -g $(LLVMFLAGS) -std=c++11
 LDFLAGS = -ll
 
 YACC = yacc -d

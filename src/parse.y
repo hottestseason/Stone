@@ -42,10 +42,8 @@ program:
       statements { ast = (TopAST*)$$; }
 
 statements:
-      statements tEOL { $$ = $1; }
-    | statements tSEMICOLON { $$ = $1; }
-    | statement { $$ = new BlockAST($1); }
-    | statements statement { $$->addChild($2); }
+      statement { $$ = new BlockAST($1); }
+    | statements tEOL statement { $$->addChild($3); }
 
 statement:
       { $$ = NULL; }

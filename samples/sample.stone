@@ -16,3 +16,48 @@ def test():double {
 
 test()
 
+def taraid(x:double, y:double, z:double):double {
+  if y > x - 1 {
+    y
+  } else {
+    taraid(taraid(x - 1, y, z), taraid(y - 1, z, x), taraid(z - 1, x, y))
+  }
+}
+
+taraid(0.0, 0.0, 0.0)
+
+def sum(n:int):int {
+  if 2 > n {
+    1
+  } else {
+    n + sum(n - 1)
+  }
+}
+
+sum(10)
+
+def max(x:int, y:int):int {
+  if x > y {
+    x
+  } else {
+    y
+  }
+}
+
+max(2, 3)
+
+def abs(x:int):int {
+  if 0 > x {
+    0 - x
+  } else {
+    x
+  }
+}
+
+abs(0 - 3)
+
+def twice(x:int):int {
+  x * 2
+}
+
+twice(4)

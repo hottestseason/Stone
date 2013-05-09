@@ -53,7 +53,7 @@ void CodeGenerator::visit(BinaryExprAST *ast) {
         ast->right()->accept(this);
         auto rValue = lastValue;
 
-        if (ast->op() == "+") {
+        if (ast->op() == "+" || ast->op() == "-" || ast->op() == "*" || ast->op() == "/" || ast->op() == ">" || ast->op() == "<") {
             if (lValue->getType()->isDoubleTy() || rValue->getType()->isDoubleTy()) {
                 if (lValue->getType()->isIntegerTy()) {
                     lValue = builder->CreateSIToFP(lValue, getType("double"));
@@ -61,33 +61,33 @@ void CodeGenerator::visit(BinaryExprAST *ast) {
                 if (rValue->getType()->isIntegerTy()) {
                     rValue = builder->CreateSIToFP(rValue, getType("double"));
                 }
-                lastValue = builder->CreateFAdd(lValue, rValue);
+                if (ast->op() == "+") {
+                    lastValue = builder->CreateFAdd(lValue, rValue);
+                } else if (ast->op() == "-") {
+                    lastValue = builder->CreateFSub(lValue, rValue);
+                } else if (ast->op() == "*") {
+                    lastValue = builder->CreateFMul(lValue, rValue);
+                } else if (ast->op() == "/") {
+                    lastValue = builder->CreateFDiv(lValue, rValue);
+                } else if (ast->op() == ">") {
+                    lastValue = builder->CreateFCmpOGT(lValue, rValue);
+                } else if (ast->op() == "<") {
+                    lastValue = builder->CreateFCmpOLT(lValue, rValue);
+                }
             } else {
-                lastValue = builder->CreateAdd(lValue, rValue);
-            }
-        } else if (ast->op() == "-") {
-            if (lValue->getType()->isDoubleTy() || rValue->getType()->isDoubleTy()) {
-                if (lValue->getType()->isIntegerTy()) {
-                    lValue = builder->CreateSIToFP(lValue, getType("double"));
+                if (ast->op() == "+") {
+                    lastValue = builder->CreateAdd(lValue, rValue);
+                } else if (ast->op() == "-") {
+                    lastValue = builder->CreateSub(lValue, rValue);
+                } else if (ast->op() == "*") {
+                    lastValue = builder->CreateMul(lValue, rValue);
+                } else if (ast->op() == "/") {
+                    lastValue = builder->CreateSDiv(lValue, rValue);
+                } else if (ast->op() == ">") {
+                    lastValue = builder->CreateICmpSGT(lValue, rValue);
+                } else if (ast->op() == "<") {
+                    lastValue = builder->CreateICmpSLT(lValue, rValue);
                 }
-                if (rValue->getType()->isIntegerTy()) {
-                    rValue = builder->CreateSIToFP(rValue, getType("double"));
-                }
-                lastValue = builder->CreateFSub(lValue, rValue);
-            } else {
-                lastValue = builder->CreateSub(lValue, rValue);
-            }
-        } else if(ast->op() == ">") {
-            if (lValue->getType()->isDoubleTy() || rValue->getType()->isDoubleTy()) {
-                if (lValue->getType()->isIntegerTy()) {
-                    lValue = builder->CreateSIToFP(lValue, getType("double"));
-                }
-                if (rValue->getType()->isIntegerTy()) {
-                    rValue = builder->CreateSIToFP(rValue, getType("double"));
-                }
-                lastValue = builder->CreateFCmpUGT(lValue, rValue);
-            } else {
-                lastValue = builder->CreateICmpUGT(lValue, rValue);
             }
         }
     }
@@ -159,7 +159,7 @@ void CodeGenerator::visit(DefAST *ast) {
     ast->body()->accept(this);
     builder->CreateRet(lastValue);
 
-    functionPassManager->run(*function);
+//    functionPassManager->run(*function);
 
     lastValue = function;
 }

@@ -23,7 +23,7 @@ std::vector<AST*>* AST::getChildren() const {
     return children;
 }
 
-AST* AST::child(int i) const {
+AST* AST::get(int i) const {
     return (*children)[i];
 }
 
@@ -81,11 +81,11 @@ void VariableAST::accept(ASTVisitor *visitor) {
 }
 
 std::string VariableAST::getName() {
-    return dynamic_cast<ASTLeaf*>(child(0))->getToken()->getText();
+    return dynamic_cast<ASTLeaf*>(get(0))->getToken()->getText();
 }
 
 std::string VariableAST::getTypeName() {
-    return dynamic_cast<ASTLeaf*>(child(1))->getToken()->getText();
+    return dynamic_cast<ASTLeaf*>(get(1))->getToken()->getText();
 }
 
 BinaryExprAST::BinaryExprAST(std::string tokenName, AST *ast) : AST() {
@@ -104,15 +104,15 @@ BinaryExprAST::BinaryExprAST(std::string tokenName, AST *lAst, AST *rAst) : AST(
 }
 
 std::string BinaryExprAST::op() {
-    return dynamic_cast<ASTLeaf*>(child(0))->getToken()->getText();
+    return dynamic_cast<ASTLeaf*>(get(0))->getToken()->getText();
 }
 
 AST* BinaryExprAST::left() {
-    return child(1);
+    return get(1);
 }
 
 AST* BinaryExprAST::right() {
-    return child(2);
+    return get(2);
 }
 
 void BinaryExprAST::accept(ASTVisitor *visitor) {
@@ -134,7 +134,7 @@ int ArgumentsAST::size() {
 }
 
 VariableAST *ArgumentsAST::get(int i) {
-    return dynamic_cast<VariableAST*>(child(i));
+    return dynamic_cast<VariableAST*>(AST::get(i));
 }
 
 CallFunctionAST::CallFunctionAST(std::string name, AST *args) : AST() {
@@ -149,11 +149,11 @@ void CallFunctionAST::accept(ASTVisitor *visitor) {
 }
 
 std::string CallFunctionAST::name() {
-    return dynamic_cast<ASTLeaf*>(child(0))->getToken()->getText();
+    return dynamic_cast<ASTLeaf*>(get(0))->getToken()->getText();
 }
 
 ArgumentsAST* CallFunctionAST::arguments() {
-    return dynamic_cast<ArgumentsAST*>(child(1));
+    return dynamic_cast<ArgumentsAST*>(get(1));
 }
 
 IfAST::IfAST(AST *expr, AST *block) : AST(expr, block) {
@@ -172,15 +172,15 @@ void IfAST::print(std::ostream &out) const {
 }
 
 AST* IfAST::condition() const {
-    return child(0);
+    return get(0);
 }
 
 AST* IfAST::thenBlock() const {
-    return child(1);
+    return get(1);
 }
 
 AST* IfAST::elseBlock() const {
-    return child(2);
+    return get(2);
 }
 
 void IfAST::accept(ASTVisitor *visitor) {
@@ -206,19 +206,19 @@ void DefAST::print(std::ostream &out) const {
 }
 
 std::string DefAST::name() const {
-    return dynamic_cast<ASTLeaf *>(child(0))->getToken()->getText();
+    return dynamic_cast<ASTLeaf *>(get(0))->getToken()->getText();
 }
 
 ArgumentsAST* DefAST::arguments() const {
-    return dynamic_cast<ArgumentsAST*>(child(1));
+    return dynamic_cast<ArgumentsAST*>(get(1));
 }
 
 AST* DefAST::body() const {
-    return child(2);
+    return get(2);
 }
 
 std::string DefAST::getTypeName() {
-    return dynamic_cast<ASTLeaf *>(child(3))->getToken()->getText();;
+    return dynamic_cast<ASTLeaf *>(get(3))->getToken()->getText();;
 }
 
 void DefAST::accept(ASTVisitor *visitor) {

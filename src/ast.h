@@ -10,7 +10,7 @@ public:
     AST(AST*);
     AST(AST*, AST*);
     std::vector<AST*>* getChildren() const;
-    AST* child(int) const;
+    AST* get(int) const;
     void add(AST*);
     virtual void print(std::ostream&) const;
     virtual void accept(ASTVisitor*) = 0;

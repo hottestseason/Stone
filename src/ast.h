@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <map>
 #include "token.h"
 
 class ASTVisitor;
@@ -11,12 +12,15 @@ public:
     AST(AST*, AST*);
     std::vector<AST*>* getChildren() const;
     AST* get(int) const;
+    AST* get(std::string) const;
     void add(AST*);
+    void add(std::string, AST*);
     virtual void print(std::ostream&) const;
     virtual void accept(ASTVisitor*) = 0;
     friend std::ostream& operator<<(std::ostream&, const AST&);
 protected:
     std::vector<AST*>* children;
+    std::map<std::string, AST*>* namedChildren;
 };
 
 class ASTLeaf : public AST {

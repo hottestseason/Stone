@@ -159,7 +159,7 @@ void CodeGenerator::visit(DefAST *ast) {
     ast->body()->accept(this);
     builder->CreateRet(lastValue);
 
-//    functionPassManager->run(*function);
+    functionPassManager->run(*function);
 
     lastValue = function;
 }
